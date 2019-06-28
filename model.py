@@ -45,58 +45,92 @@ class Model():
     def build_model(self):
         inputs = tf.keras.layers.Input(shape=[30, 120, 3])
         network = tf.keras.layers.Conv2D(32, (3, 3), activation='relu')(inputs)
+        network = tf.keras.layers.BatchNormalization()(network)
         network = tf.keras.layers.MaxPool2D((2, 2))(network)
-        network = tf.keras.layers.Conv2D(64, (3, 3), activation='relu')(network)
+        network = tf.keras.layers.Conv2D(32, (3, 3), activation='relu')(network)
+        network = tf.keras.layers.BatchNormalization()(network)
         network = tf.keras.layers.MaxPool2D((2, 2))(network)
-        network = tf.keras.layers.Conv2D(128, (3, 3), activation='relu')(network)
-        network = tf.keras.layers.MaxPool2D((2, 2))(network)
+
         network = tf.keras.layers.Flatten()(network)
-        network = tf.keras.layers.Dense(1024, activation='relu')(network)
-        network = tf.keras.layers.Dropout(0.2)(network)
 
-        p1 = tf.keras.layers.Dense(36, activation="softmax")(network)
-        p2 = tf.keras.layers.Dense(36, activation="softmax")(network)
-        p3 = tf.keras.layers.Dense(36, activation="softmax")(network)
-        p4 = tf.keras.layers.Dense(36, activation="softmax")(network)
+        p1 = tf.keras.layers.Dense(128, activation='relu')(network)
+        p1 = tf.keras.layers.Dropout(0.2)(p1)
+        p2 = tf.keras.layers.Dense(128, activation='relu')(network)
+        p2 = tf.keras.layers.Dropout(0.2)(p2)
+        p3 = tf.keras.layers.Dense(128, activation='relu')(network)
+        p3 = tf.keras.layers.Dropout(0.2)(p3)
+        p4 = tf.keras.layers.Dense(128, activation='relu')(network)
+        p4 = tf.keras.layers.Dropout(0.2)(p4)
 
-        output = tf.keras.layers.Concatenate()([p1, p2, p3, p4])
-        self.model = tf.keras.Model(inputs = [inputs], outputs=output)
-        """
-        
-        self.model = tf.keras.models.Sequential(
-            [
-                tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(30, 120, 3)),
-                tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Conv2D(16, (3, 3), activation='relu'),
-                tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(1024, activation='relu'),
-                tf.keras.layers.Dropout(0.2),
-                tf.keras.layers.Dense(36 * 4, activation='sigmoid')
-            ]
-        )
-        """
-        self.model.compile(optimizer='adam',
+        p1 = tf.keras.layers.Dense(36, activation="softmax")(p1)
+        p2 = tf.keras.layers.Dense(36, activation="softmax")(p2)
+        p3 = tf.keras.layers.Dense(36, activation="softmax")(p3)
+        p4 = tf.keras.layers.Dense(36, activation="softmax")(p4)
+
+        self.model1 = tf.keras.Model(inputs = [inputs], outputs=p1)
+        self.model2 = tf.keras.Model(inputs = [inputs], outputs=p2)
+        self.model3 = tf.keras.Model(inputs = [inputs], outputs=p3)
+        self.model4 = tf.keras.Model(inputs = [inputs], outputs=p4)
+
+        self.model1.compile(optimizer='adam',
                            loss='categorical_crossentropy',
                            metrics=['accuracy'])
+        self.model1.summary()
+        self.model2.compile(optimizer='adam',
+                            loss='categorical_crossentropy',
+                            metrics=['accuracy'])
+        self.model2.summary()
+        self.model3.compile(optimizer='adam',
+                            loss='categorical_crossentropy',
+                            metrics=['accuracy'])
+        self.model3.summary()
+        self.model4.compile(optimizer='adam',
+                            loss='categorical_crossentropy',
+                            metrics=['accuracy'])
+        self.model4.summary()
 
-    def train(self, X, label, epochs=32):
-        self.model.fit(X, label, epochs=epochs)
+    def train(self, X, label, X_valid=None, Y_valid=None,epochs=32):
+        label1 = label[:, : 36]
+        label2 = label[:, 36 : 36 * 2]
+        label3 = label[:, 36 * 2: 36 * 3]
+        label4 = label[:, 36 * 3: 36 * 4]
+
+        Y_valid1 = Y_valid[:, : 36]
+        Y_valid2 = Y_valid[:, 36 : 36 * 2]
+        Y_valid3 = Y_valid[:, 36 * 2: 36 * 3]
+        Y_valid4 = Y_valid[:,36 * 3 : 36 * 4]
+        if X_valid is None or Y_valid is None:
+            self.model1.fit(X, label1, epochs=epochs, batch_size=64)
+            self.model2.fit(X, label2, epochs=epochs, batch_size=64)
+            self.model3.fit(X, label3, epochs=epochs, batch_size=64)
+            self.model4.fit(X, label4, epochs=epochs, batch_size=64)
+        else:
+            self.model1.fit(X, label1, epochs=epochs, batch_size=64, validation_data=(X_valid, Y_valid1))
+            self.model2.fit(X, label2, epochs=epochs, batch_size=64, validation_data=(X_valid, Y_valid2))
+            self.model3.fit(X, label3, epochs=epochs, batch_size=64, validation_data=(X_valid, Y_valid3))
+            self.model4.fit(X, label4, epochs=epochs, batch_size=64, validation_data=(X_valid, Y_valid4))
 
     def predict(self, X):
-        predictions = self.model.predict(X)
-        print( predictions.shape)
-        a = np.argmax(predictions[:, :36])
-        b = np.argmax(predictions[:, 36 : 36 * 2])
-        c = np.argmax(predictions[:, 36 * 2 : 36 * 3])
-        d = np.argmax(predictions[:, 36 * 3: 36 * 4])
+        a = self.model1.predict(X)
+        b = self.model2.predict(X)
+        c = self.model3.predict(X)
+        d = self.model4.predict(X)
         return [a, b, c, d]
 
+    def evaluate(self, X, Y):
+        pass
+
     def save_model(self, path):
-        self.model.save_weights(path)
+        self.model1.save_weights(path + "1")
+        self.model2.save_weights(path + "2")
+        self.model3.save_weights(path + "3")
+        self.model4.save_weights(path + "4")
 
     def load_model(self, path):
-        self.model.load_weights(path)
+        self.model1.load_weights(path + "1")
+        self.model2.load_weights(path + "2")
+        self.model3.load_weights(path + "3")
+        self.model4.load_weights(path + "4")
 
 
 
@@ -165,9 +199,15 @@ if __name__ == "__main__":
     X, Y = load_data('data')
     X = X / 255.0
     Y = np.asarray(Y)
+    X_valid, Y_valid = load_data('valid')
+    X_valid = X_valid / 255.0
 
-    model = TFModel()
+    model = Model()
     model.build_model()
     #model.load_model("model.m")
-    model.train(X, Y)
-    #model.save_model("model.m")
+    model.train(X, Y, X_valid, Y_valid, 16)
+    model.save_model("model.m")
+    predict_input = np.array([X[0, :, :, :]])
+
+    print( model.predict( predict_input) )
+    print(Y[0, :])
