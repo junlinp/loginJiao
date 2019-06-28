@@ -98,13 +98,76 @@ class Model():
     def load_model(self, path):
         self.model.load_weights(path)
 
+
+
+
+
+class TFModel():
+    def __init__(self):
+        pass
+
+    def build_model(self):
+        self.x_input = tf.placeholder(tf.float32, [None, 30, 120, 3])
+        self.y_input = tf.palceholder(tf.float32, [None, 36 * 4])
+
+        conv1 = tf.nn.conv2d(self.x_input, 32, [3, 3])
+        conv1 = tf.nn.relu(conv1)
+        conv1 = tf.nn.conv2d(conv1, 32, [3, 3])
+        conv1 = tf.nn.relu(conv1)
+        max_pool1 = tf.nn.max_pool2d(conv1, [2, 2], [2, 2])
+
+        conv2 = tf.nn.conv2d(max_pool1, 64, [3, 3])
+        conv2 = tf.nn.relu(conv2)
+        conv2 = tf.nn.conv2d(conv2, 64, [3, 3])
+        conv2 = tf.nn.relu(conv2)
+        max_pool2 = tf.nn.max_pool2d(conv2, [2, 2], [2, 2])
+
+        reshape = tf.nn.reshape(max_pool2, [-1, 30 * 64 * 8])
+
+        fc1 = tf.layers.dense(reshape, 1024)
+        fc1 = tf.layers.dense(fc1, 36)
+
+        fc2 = tf.layers.dense(reshape, 1024)
+        fc2 = tf.layers.dense(fc2, 36)
+
+        fc3 = tf.layers.dense(reshape, 1024)
+        fc3 = tf.layers.dense(fc3, 36)
+
+        fc4 = tf.layers.dense(reshape, 1024)
+        fc4 = tf.layers.dense(fc4, 36)
+
+        concat = tf.concat([fc1, fc2, fc3, fc4], axis = 1)
+        self.cross_entropy = tf.reduce_mean(
+           tf.nn.softmax_cross_entropy_with_logits(logits = concat, labels = self.y_input)
+        )
+
+        self.optimiser = tf.train.AdamOptimizer(0.01).minimize(self.cross_entropy)
+        correct_prediction = \
+            tf.cast(tf.equal(tf.argmax(fc1, 1), tf.argmax(self.y_input[:36], 1)), tf.int32) * \
+            tf.cast(tf.equal(tf.argmax(fc2, 1), tf.argmax(self.y_input[36 : 2 * 36])), tf.int32) *\
+            tf.cast(tf.equal(tf.argmax(fc3, 1), tf.argmax(self.y_input[36 * 2, 36 * 3])), tf.int32) *\
+            tf.cast(tf.euqal(tf.argmax(fc4, 1), tf.argmax(self.y_input[36 * 3, 36 * 4])), tf.int32)
+        self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+        init_op = tf.global_variables_initializer()
+        self.sess = tf.Session()
+        self.sess.run(init_op)
+
+    def train(self, X, Y, epochs = 32):
+
+        for i in range(epochs):
+            _, accurary,loss = self.sess.run([self.optimiser, self.accuracy, self.cross_entropy], feed_dict={'x_input' : X, 'y_input' : Y})
+            print("EPOCHS {} -- Accurary: {}".format(i + 1, accurary))
+
+
+
 if __name__ == "__main__":
     X, Y = load_data('data')
     X = X / 255.0
     Y = np.asarray(Y)
 
-    model = Model()
+    model = TFModel()
     model.build_model()
     #model.load_model("model.m")
-    model.train(X, Y, 64)
-    model.save_model("model.m")
+    model.train(X, Y)
+    #model.save_model("model.m")
