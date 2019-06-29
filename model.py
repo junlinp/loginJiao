@@ -154,26 +154,27 @@ class TFModel():
     def __init__(self):
         self.x_input = tf.placeholder(tf.float32, [None, 30, 120, 3])
         self.y_input = tf.placeholder(tf.float32, [None, 36 * 4])
-        conv1 = tf.keras.layers.Conv2D(32, (3, 3), activation='relu')(self.x_input)
-        conv1 = tf.keras.layers.Conv2D(32, (3, 3), activation='relu', padding='SAME')(conv1)
-        max_pool1 = tf.keras.layers.MaxPool2D()(conv1)
+        conv1 = tf.layers.conv2d(self.x_input, 32, (3, 3), activation= tf.nn.relu)
+        conv1 = tf.layers.conv2d(conv1, 32, (3, 3), activation=tf.nn.relu)
+        max_pool1 = tf.layers.max_pooling2d(conv1, (2, 2), (2, 2))
 
-        conv2 = tf.layers.Conv2D(64, (3, 3), activation='relu')(max_pool1)
-        max_pool2 = tf.keras.layers.MaxPool2D()(conv2)
+        conv2 = tf.layers.conv2d(max_pool1, 16, (3, 3), activation= tf.nn.relu)
+        max_pool2 = tf.layers.max_pooling2d(conv2, (2, 2), (2, 2))
 
-        reshape = tf.keras.layers.Flatten()(max_pool2)
+        shape = max_pool2.shape[1] * max_pool2.shape[2] * max_pool2.shape[3]
+        reshape = tf.reshape(max_pool2, [-1, shape.value])
 
-        fc1 = tf.layers.Dense(1024, activation="relu")(reshape)
-        self.fc1 = tf.layers.dense(fc1, 36, activation="softmax")
+        fc1 = tf.layers.dense(reshape, 1024, activation= tf.nn.relu)
+        self.fc1 = tf.layers.dense(fc1, 36, activation= tf.nn.softmax)
 
-        fc2 = tf.layers.Dense(1024, activation="relu")(reshape)
-        self.fc2 = tf.layers.dense(fc2, 36, activation="softmax")
+        fc2 = tf.layers.dense(reshape, 1024, activation=tf.nn.relu)
+        self.fc2 = tf.layers.dense(fc2, 36, activation=tf.nn.softmax)
 
-        fc3 = tf.layers.Dense(1024, activation="relu")(reshape)
-        self.fc3 = tf.layers.dense(fc3, 36, activation="softmax")
+        fc3 = tf.layers.dense(reshape, 1024, activation=tf.nn.relu)
+        self.fc3 = tf.layers.dense(fc3, 36, activation=tf.nn.softmax)
 
-        fc4 = tf.layers.Dense(1024, activation="relu")(reshape)
-        self.fc4 = tf.layers.dense(fc4, 36, activation="softmax")
+        fc4 = tf.layers.dense(reshape, 1024, activation=tf.nn.relu)
+        self.fc4 = tf.layers.dense(fc4, 36, activation=tf.nn.softmax)
 
         concat = tf.concat([self.fc1, self.fc2, self.fc3, self.fc4], axis=1)
         self.cross_entropy = tf.reduce_mean(tf.reduce_mean(
@@ -196,7 +197,7 @@ class TFModel():
         pass
 
     def train(self, X, Y, epochs=32):
-        batch_size = 64
+        batch_size = 16
         for i in range(epochs):
             start_time = time.time()
             j = 0
@@ -241,7 +242,7 @@ if __name__ == "__main__":
 
     model = TFModel()
     model.build_model()
-    model.load_model("model.m")
+    #model.load_model("model.m")
     model.train(X, Y, 32)
     model.save_model("model.m")
     predict_input = np.array([X[0, :, :, :]])
