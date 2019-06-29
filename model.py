@@ -202,7 +202,7 @@ class TFModel():
         pass
 
     def train(self, X, Y, epochs=32):
-        batch_size = 16
+        batch_size = 64
         for i in range(epochs):
             start_time = time.time()
             j = 0
@@ -248,8 +248,8 @@ if __name__ == "__main__":
     model = TFModel()
     model.build_model()
     #model.load_model("model.m")
-    model.train(X, Y, 32)
-    model.save_model("model.m")
+    model.train(X, Y, 2)
+    model.save_model("./model.m")
     predict_input = np.array([X[0, :, :, :]])
 
     #print(model.predict(predict_input))
