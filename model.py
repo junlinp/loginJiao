@@ -236,8 +236,8 @@ if __name__ == "__main__":
     X, Y = load_data('data')
     X = X / 255.0
     Y = np.asarray(Y)
-    X_valid, Y_valid = load_data('valid')
-    X_valid = X_valid / 255.0
+    #X_valid, Y_valid = load_data('valid')
+    #X_valid = X_valid / 255.0
 
     model = TFModel()
     model.build_model()
