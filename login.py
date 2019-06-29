@@ -44,7 +44,7 @@ def checkCode(Indentify_code, cookie):
 
 
 
-network = model.Model()
+network = TFmodel.Model()
 network.build_model()
 network.load_model("model.m")
 def getDate():
