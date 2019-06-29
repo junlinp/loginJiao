@@ -154,16 +154,13 @@ class TFModel():
     def __init__(self):
         self.x_input = tf.placeholder(tf.float32, [None, 30, 120, 3])
         self.y_input = tf.placeholder(tf.float32, [None, 36 * 4])
-        conv1 = tf.layers.conv2d(self.x_input, 8, (3, 3), activation=tf.nn.relu)
-        conv1 = tf.layers.conv2d(conv1, 8, (3, 3), activation=tf.nn.relu)
-
+        conv1 = tf.layers.conv2d(self.x_input, 8, (3, 3))
+        conv1 = tf.layers.conv2d(conv1, 8, (3, 3))
+        conv1 = tf.nn.relu(conv1)
         max_pool1 = tf.layers.max_pooling2d(conv1, (2, 2), (2, 2))
 
-        conv2 = tf.layers.conv2d(max_pool1, 16, (3, 3), activation=tf.nn.relu)
-        max_pool2 = tf.layers.max_pooling2d(conv2, (2, 2), (2, 2))
-
-        shape = max_pool2.shape[1] * max_pool2.shape[2] * max_pool2.shape[3]
-        reshape = tf.reshape(max_pool2, [-1, shape.value])
+        shape = max_pool1.shape[1] * max_pool1.shape[2] * max_pool1.shape[3]
+        reshape = tf.reshape(max_pool1, [-1, shape.value])
 
         fc1 = tf.layers.dense(reshape, 128, activation=tf.nn.relu)
         fc1 = tf.layers.dense(fc1, 64, activation=tf.nn.relu)
@@ -186,7 +183,7 @@ class TFModel():
             - self.y_input * tf.log(concat)
         ))
 
-        self.optimiser = tf.train.AdamOptimizer(1e-5).minimize(self.cross_entropy)
+        self.optimiser = tf.train.AdamOptimizer(1e-4).minimize(self.cross_entropy)
         correct_prediction = \
             tf.cast(tf.equal(tf.argmax(fc1, 1), tf.argmax(self.y_input[:, 0:36], 1)), tf.int32) * \
             tf.cast(tf.equal(tf.argmax(fc2, 1), tf.argmax(self.y_input[:, 1 * 36 : 2 * 36], 1)), tf.int32) * \
@@ -248,8 +245,8 @@ if __name__ == "__main__":
     model = TFModel()
     model.build_model()
     #model.load_model("model.m")
-    model.train(X, Y, 32)
-    model.save_model("model.m")
+    model.train(X, Y,16)
+    model.save_model("model")
     predict_input = np.array([X[0, :, :, :]])
 
     #print(model.predict(predict_input))
