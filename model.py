@@ -154,26 +154,31 @@ class TFModel():
     def __init__(self):
         self.x_input = tf.placeholder(tf.float32, [None, 30, 120, 3])
         self.y_input = tf.placeholder(tf.float32, [None, 36 * 4])
-        conv1 = tf.layers.conv2d(self.x_input, 32, (3, 3), activation= tf.nn.relu)
-        conv1 = tf.layers.conv2d(conv1, 32, (3, 3), activation=tf.nn.relu)
+        conv1 = tf.layers.conv2d(self.x_input, 8, (3, 3), activation=tf.nn.relu)
+        conv1 = tf.layers.conv2d(conv1, 8, (3, 3), activation=tf.nn.relu)
+
         max_pool1 = tf.layers.max_pooling2d(conv1, (2, 2), (2, 2))
 
-        conv2 = tf.layers.conv2d(max_pool1, 16, (3, 3), activation= tf.nn.relu)
+        conv2 = tf.layers.conv2d(max_pool1, 16, (3, 3), activation=tf.nn.relu)
         max_pool2 = tf.layers.max_pooling2d(conv2, (2, 2), (2, 2))
 
         shape = max_pool2.shape[1] * max_pool2.shape[2] * max_pool2.shape[3]
         reshape = tf.reshape(max_pool2, [-1, shape.value])
 
-        fc1 = tf.layers.dense(reshape, 1024, activation= tf.nn.relu)
-        self.fc1 = tf.layers.dense(fc1, 36, activation= tf.nn.softmax)
+        fc1 = tf.layers.dense(reshape, 128, activation=tf.nn.relu)
+        fc1 = tf.layers.dense(fc1, 64, activation=tf.nn.relu)
+        self.fc1 = tf.layers.dense(fc1, 36, activation=tf.nn.softmax)
 
-        fc2 = tf.layers.dense(reshape, 1024, activation=tf.nn.relu)
+        fc2 = tf.layers.dense(reshape, 128, activation=tf.nn.relu)
+        fc2 = tf.layers.dense(fc2, 64, activation=tf.nn.relu)
         self.fc2 = tf.layers.dense(fc2, 36, activation=tf.nn.softmax)
 
-        fc3 = tf.layers.dense(reshape, 1024, activation=tf.nn.relu)
+        fc3 = tf.layers.dense(reshape, 128, activation=tf.nn.relu)
+        fc3 = tf.layers.dense(fc3, 64, activation=tf.nn.relu)
         self.fc3 = tf.layers.dense(fc3, 36, activation=tf.nn.softmax)
 
-        fc4 = tf.layers.dense(reshape, 1024, activation=tf.nn.relu)
+        fc4 = tf.layers.dense(reshape, 128, activation=tf.nn.relu)
+        fc4 = tf.layers.dense(fc4, 64, activation=tf.nn.relu)
         self.fc4 = tf.layers.dense(fc4, 36, activation=tf.nn.softmax)
 
         concat = tf.concat([self.fc1, self.fc2, self.fc3, self.fc4], axis=1)
