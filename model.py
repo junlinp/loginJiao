@@ -149,6 +149,12 @@ def conv2d(X_input, filter, strides, padding="SAME"):
 def max_pool_2x2(X_input):
     return tf.nn.max_pool(X_input, [1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
+def conv2_block(input, filter_size):
+    conv = tf.layers.conv2d(input, filter_size, (3, 3), padding = "SAME")
+    conv2 = tf.layers.conv2d(conv, filter_size, (3, 3), padding = "SAME")
+    conv3 = conv + conv2
+    relu = tf.nn.relu(conv3)
+    return tf.layers.max_pooling2d(relu, (2, 2), (2, 2))
 
 class TFModel():
     def __init__(self):
@@ -158,9 +164,11 @@ class TFModel():
         conv1 = tf.layers.conv2d(conv1, 8, (3, 3))
         conv1 = tf.nn.relu(conv1)
         max_pool1 = tf.layers.max_pooling2d(conv1, (2, 2), (2, 2))
-
-        shape = max_pool1.shape[1] * max_pool1.shape[2] * max_pool1.shape[3]
-        reshape = tf.reshape(max_pool1, [-1, shape.value])
+        max_pool2 = conv2_block(max_pool1, 16)
+        max_pool3 = conv2_block(max_pool2, 32)
+        pool = max_pool3
+        shape = pool.shape[1] * pool.shape[2] * pool.shape[3]
+        reshape = tf.reshape(pool, [-1, shape.value])
 
         fc1 = tf.layers.dense(reshape, 128, activation=tf.nn.relu)
         fc1 = tf.layers.dense(fc1, 64, activation=tf.nn.relu)
@@ -180,10 +188,10 @@ class TFModel():
 
         concat = tf.concat([self.fc1, self.fc2, self.fc3, self.fc4], axis=1)
         self.cross_entropy = tf.reduce_mean(tf.reduce_mean(
-            - self.y_input * tf.log(concat)
+            tf.pow(self.y_input - concat, 2)
         ))
 
-        self.optimiser = tf.train.AdamOptimizer(1e-4).minimize(self.cross_entropy)
+        self.optimiser = tf.train.AdamOptimizer(1e-6).minimize(self.cross_entropy)
         correct_prediction = \
             tf.cast(tf.equal(tf.argmax(fc1, 1), tf.argmax(self.y_input[:, 0:36], 1)), tf.int32) * \
             tf.cast(tf.equal(tf.argmax(fc2, 1), tf.argmax(self.y_input[:, 1 * 36 : 2 * 36], 1)), tf.int32) * \
@@ -199,7 +207,7 @@ class TFModel():
         pass
 
     def train(self, X, Y, epochs=32):
-        batch_size = 16
+        batch_size = 64
         for i in range(epochs):
             start_time = time.time()
             j = 0
@@ -244,9 +252,9 @@ if __name__ == "__main__":
 
     model = TFModel()
     model.build_model()
-    #model.load_model("model.m")
-    model.train(X, Y,16)
-    model.save_model("model")
+    #model.load_model("./model.m")
+    model.train(X, Y, 8)
+    model.save_model("./model.m")
     predict_input = np.array([X[0, :, :, :]])
 
     #print(model.predict(predict_input))
