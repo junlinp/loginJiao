@@ -172,23 +172,27 @@ class TFModel():
 
         fc1 = tf.layers.dense(reshape, 128, activation=tf.nn.relu)
         fc1 = tf.layers.dense(fc1, 64, activation=tf.nn.relu)
-        self.fc1 = tf.layers.dense(fc1, 36, activation=tf.nn.softmax)
+        self.fc1 = tf.layers.dense(fc1, 36, activation=tf.nn.relu)
+        self.fc1 = tf.nn.softmax(self.fc1)
 
         fc2 = tf.layers.dense(reshape, 128, activation=tf.nn.relu)
         fc2 = tf.layers.dense(fc2, 64, activation=tf.nn.relu)
-        self.fc2 = tf.layers.dense(fc2, 36, activation=tf.nn.softmax)
+        self.fc2 = tf.layers.dense(fc2, 36, activation=tf.nn.relu)
+        self.fc2 = tf.nn.softmax(self.fc2)
 
         fc3 = tf.layers.dense(reshape, 128, activation=tf.nn.relu)
         fc3 = tf.layers.dense(fc3, 64, activation=tf.nn.relu)
-        self.fc3 = tf.layers.dense(fc3, 36, activation=tf.nn.softmax)
+        self.fc3 = tf.layers.dense(fc3, 36, activation=tf.nn.relu)
+        self.fc3 = tf.nn.softmax(self.fc3)
 
         fc4 = tf.layers.dense(reshape, 128, activation=tf.nn.relu)
         fc4 = tf.layers.dense(fc4, 64, activation=tf.nn.relu)
-        self.fc4 = tf.layers.dense(fc4, 36, activation=tf.nn.softmax)
+        self.fc4 = tf.layers.dense(fc4, 36, activation=tf.nn.relu)
+        self.fc4 = tf.nn.softmax(self.fc4)
 
         concat = tf.concat([self.fc1, self.fc2, self.fc3, self.fc4], axis=1)
         self.cross_entropy = tf.reduce_mean(tf.reduce_mean(
-            tf.pow(self.y_input - concat, 2)
+            - self.y_input * tf.log(concat)
         ))
 
         self.optimiser = tf.train.AdamOptimizer(1e-6).minimize(self.cross_entropy)
@@ -253,7 +257,7 @@ if __name__ == "__main__":
     model = TFModel()
     model.build_model()
     #model.load_model("./model.m")
-    model.train(X, Y, 8)
+    model.train(X, Y, 128)
     model.save_model("./model.m")
     predict_input = np.array([X[0, :, :, :]])
 
